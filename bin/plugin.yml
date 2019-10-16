@@ -1,4 +1,7 @@
 name: PlotGen
 version: 1.0
-Main: me.caleb.PlotGen
+main: me.caleb.PlotGeneration.Main
 author: Caleb Owens
+commands:
+  plotgen:
+    description: Plotgen command

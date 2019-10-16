@@ -1,5 +1,9 @@
 package me.caleb.PlotGeneration.command;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Random;
 
 import org.bukkit.Bukkit;
@@ -19,6 +23,7 @@ public class PlotGen implements CommandExecutor{
 	
 	public PlotGen(Main plugin) {
 		this.plugin = plugin;
+		
 		plugin.getCommand("plotgen").setExecutor(this);
 	}
 	
@@ -44,7 +49,21 @@ public class PlotGen implements CommandExecutor{
 				int y = rand.nextInt(5000);
 				int x = rand.nextInt(5000);
 				
-				
+				Connection connection = plugin.connection;
+				try {
+					String sql = "SELECT * FROM IslandInfo";
+					PreparedStatement stmt = plugin.getConnection().prepareStatement(sql);
+					
+					ResultSet results = stmt.executeQuery();
+					if(results.next()) {
+						Bukkit.getConsoleSender().sendMessage("Island info found!");
+						return true;
+					}
+					Bukkit.getConsoleSender().sendMessage("Island info not found!");
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 		
