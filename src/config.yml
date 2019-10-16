@@ -1,0 +1,12 @@
+#Specific height
+Level:
+
+#Size of plot
+Size:
+
+#MYSQL DATA
+Host: "51.81.5.51"
+Port: 3306
+Database: "serverpro_db"
+Username: "root"
+Password: "Krni7YlzOK843lx"
