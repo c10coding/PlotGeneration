@@ -1,6 +1,5 @@
 package me.caleb.PlotGeneration.command;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,16 +16,36 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.util.BlockVector;
 
+import com.sk89q.worldedit.WorldEdit;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
+import com.sk89q.worldedit.internal.annotation.Selection;
 import com.sk89q.worldedit.regions.CuboidRegion;
+import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.domains.DefaultDomain;
+import com.sk89q.worldguard.protection.flags.Flags;
+import com.sk89q.worldguard.protection.flags.StateFlag;
+import com.sk89q.worldguard.protection.flags.StringFlag;
+import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
+import com.sk89q.worldguard.protection.regions.ProtectedRegion;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
 
+import io.netty.util.Timeout;
 import me.caleb.PlotGeneration.Main;
 import me.caleb.PlotGeneration.Plot;
+import me.caleb.PlotGeneration.utils.Chat;
 
 public class PlotGen implements CommandExecutor{
 
 	private Main plugin;
+	
+	public WorldGuardPlugin w = getWorldGuard();
 	
 	public String world,plotName,owner,x,z;
 	
@@ -53,12 +72,26 @@ public class PlotGen implements CommandExecutor{
 			if(args[0].equalsIgnoreCase("create")) {
 				
 				this.world = plugin.getConfig().getString("genWorld");
-				this.plotName = sender.getName() + "Plot";
+				this.plotName = "Plot_" + sender.getName();
 				this.owner = sender.getName();
-				plotValues();
-				plotGeneration();
-				return true;
 				
+				try {
+					PreparedStatement stmt = plugin.getConnection().prepareStatement("SELECT * FROM `IslandInfo` WHERE owner=?");
+					stmt.setString(1,owner);
+					
+					ResultSet rs = stmt.executeQuery();
+					if(rs.next()) {
+						sender.sendMessage(Chat.chat("&l[&bPlot&aGen&r&l]&r You already have a plot! Aborting..."));
+						return false;
+					}else {
+						plotValues();
+						plotGeneration();
+						return true;
+					}
+					
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		
@@ -80,6 +113,14 @@ public class PlotGen implements CommandExecutor{
 		Plugin p = Bukkit.getServer().getPluginManager().getPlugin("WorldEdit");
 		
 		if(p instanceof WorldEditPlugin) return (WorldEditPlugin) p;
+		else return null;
+		
+	}
+	
+	public WorldGuardPlugin getWorldGuard() {
+		Plugin p = Bukkit.getServer().getPluginManager().getPlugin("WorldGuard");
+		
+		if(p instanceof WorldGuardPlugin) return (WorldGuardPlugin) p;
 		else return null;
 		
 	}
@@ -109,7 +150,6 @@ public class PlotGen implements CommandExecutor{
 				stmt.setString(1,name);
 				stmt.execute();
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			
@@ -124,9 +164,33 @@ public class PlotGen implements CommandExecutor{
 				b = loc.getBlock();
 				m = b.getType();
 				
-				Bukkit.getConsoleSender().sendMessage("This block is still not air! " + m);
+				Bukkit.getConsoleSender().sendMessage("This block is still not air! Generating new coordinates... " + m);
 				
 			}	
+			
+			try {
+				
+				//AFTER FINALLY FINDING A BLOCK OF AIR
+				PreparedStatement stmt = plugin.getConnection().prepareStatement("INSERT INTO `IslandInfo`(x,z,plotName,world,owner) VALUES(?, ?, ?, ?, ?);");
+				
+				stmt.setString(1, x);
+				stmt.setString(2, z);
+				stmt.setString(3, plotName);
+				stmt.setString(4, world);
+				stmt.setString(5, owner);
+				stmt.execute();
+				
+				
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
+			Bukkit.getConsoleSender().sendMessage("This block is air! Generating a plot of land...");
+			placing();
+			
+		}else {
+			Bukkit.getConsoleSender().sendMessage("This block is air! Generating a plot of land...");
+			placing();
 			
 			try {
 				//AFTER FINALLY FINDING A BLOCK OF AIR
@@ -138,17 +202,10 @@ public class PlotGen implements CommandExecutor{
 				stmt.setString(4, world);
 				stmt.setString(5, owner);
 				stmt.execute();
-				
+					
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
-			Bukkit.getConsoleSender().sendMessage("This block is air!");
-			placing();
-		}else {
-			Bukkit.getConsoleSender().sendMessage("This block is air!");
-			placing();
 		}
 	}
 	
@@ -161,8 +218,11 @@ public class PlotGen implements CommandExecutor{
 		String plotWorld = p.world;
 		World world = plugin.getServer().getWorld(plotWorld);
 		String owner = p.owner;
+		Player player = Bukkit.getPlayer(owner);
 		int height = plugin.getConfig().getInt("Level");
 		int size = plugin.getConfig().getInt("Size");
+		
+		player.sendMessage(Chat.chat("&l[&bPlot&aGen&r&l]&r Generating plot..."));
 		
 		Location loc = new Location(world,x,height,z);
 		Location firstLoc = new Location(world,x,height,z);
@@ -171,7 +231,7 @@ public class PlotGen implements CommandExecutor{
 		
 		b.setType(Material.GRASS_BLOCK);
 
-		Bukkit.getConsoleSender().sendMessage("This block should be grass at X: " + loc.getX() + " Y: " + loc.getY() + " Z: " + loc.getZ());
+		//Bukkit.getConsoleSender().sendMessage("New plot created at these coordinates: " + loc.getX() + " Y: " + loc.getY() + " Z: " + loc.getZ());
 		
 		Player targetPlayer = Bukkit.getPlayer(owner);
 		
@@ -195,6 +255,50 @@ public class PlotGen implements CommandExecutor{
 		b2.setType(Material.AIR);
 		
 		targetPlayer.teleport(teleportLocation);
+		
+		//Protects the area
+		
+		int minX = Integer.parseInt(p.x);
+		int minY = plugin.getConfig().getInt("Level");
+		int minZ = Integer.parseInt(p.z);
+		
+		int maxX = minX + 21;
+		int maxY = 256;
+		int maxZ = minZ + 21;
+		
+		Location min = new Location(world,minX,minY,minZ);
+		Location max = new Location(world,maxX,maxY,maxZ);
+		
+		BlockVector3 bv = BlockVector3.at(minX, minY, minZ);
+		BlockVector3 bv2 = BlockVector3.at(maxX, maxY, maxZ);
+		
+		makeRegion(bv,bv2,targetPlayer, world);
+		
+	}
+	
+	public void makeRegion(BlockVector3 bv, BlockVector3 bv2, Player p, World world) {
+		
+		ProtectedCuboidRegion region = new ProtectedCuboidRegion("Plot_" + p.getName(),bv,bv2);
+		//p.sendMessage("A new region has been made for you!");
+		region.setPriority(10);
+		
+		DefaultDomain members = region.getMembers();
+		
+		LocalPlayer lp = w.wrapPlayer(p);
+		members.addPlayer(lp);
+		
+		region.setOwners(members);
+		
+		RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+		RegionManager regions = container.get(BukkitAdapter.adapt(world));
+		regions.addRegion(region);
+		
+		region.setFlag(Flags.TNT, StateFlag.State.DENY);
+		region.setFlag(Flags.PVP, StateFlag.State.DENY);
+		p.sendMessage(Chat.chat("&l[&bPlot&aGen&r&l]&r Welcome to your new plot!"));
+		//region.setFlag(Flags.GREET_MESSAGE, "Welcome to your new plot!");
+
+		
 	}
 
 }
