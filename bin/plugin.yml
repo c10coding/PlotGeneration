@@ -5,3 +5,4 @@ author: Caleb Owens
 commands:
   plotgen:
     description: Plotgen command
+api-version: 1.13

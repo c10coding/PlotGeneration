@@ -1,8 +1,11 @@
 #Specific height
-Level:
+Level: 100
 
 #Size of plot
-Size:
+Size: 20
+
+#GenWorld
+genWorld: world
 
 #MYSQL DATA
 Host: "51.81.5.51"
