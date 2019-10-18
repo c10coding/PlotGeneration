@@ -92,10 +92,61 @@ public class PlotGen implements CommandExecutor{
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
+			}else if(args[0].equalsIgnoreCase("home")) {
+				teleportHome(sender);
 			}
 		}
 		
 		return false;
+	}
+	
+	public void teleportHome(CommandSender sender) {
+		Player p = Bukkit.getPlayer(sender.getName());
+		String pName = sender.getName();
+		
+		int x,z;
+		double y;
+		String world = plugin.getConfig().getString("genWorld");
+		
+		try {
+			PreparedStatement stmt = plugin.getConnection().prepareStatement("SELECT * FROM `IslandInfo` WHERE owner=?");
+			stmt.setString(1, pName);
+			
+			ResultSet rs = stmt.executeQuery();
+		
+			while(rs.next()) {
+				
+				x = Integer.parseInt(rs.getString(2));
+				y = plugin.getConfig().getInt("Level") + 0.5;
+				z = Integer.parseInt(rs.getString(3));
+				
+				x+=4;
+				z+=4;
+				y+=1;
+				
+				p.sendMessage(chat("Teleporting you to your plot..."));
+				
+				World targetWorld = plugin.getServer().getWorld(world);
+				
+				Location loc = new Location(targetWorld,x,y,z);
+				
+				p.teleport(loc);
+				
+			}
+
+			
+			
+		}catch(SQLException e){
+			e.printStackTrace();
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+		
+	}
+	
+	public String chat(String s) {
+		return Chat.chat("&l[&bPlot&aGen&r&l]&r " + s);
 	}
 	
 	public void plotValues() {
@@ -142,7 +193,7 @@ public class PlotGen implements CommandExecutor{
 		Material m = b.getType();
 		
 		if(!(m.equals(Material.AIR))) {
-			Bukkit.getConsoleSender().sendMessage("This block is not air!");
+			Bukkit.getConsoleSender().sendMessage("&l[&bPlot&aGen&r&l]&r This block is not air!");
 			
 			String name = getPlot().owner;
 			try {
@@ -164,7 +215,7 @@ public class PlotGen implements CommandExecutor{
 				b = loc.getBlock();
 				m = b.getType();
 				
-				Bukkit.getConsoleSender().sendMessage("This block is still not air! Generating new coordinates... " + m);
+				Bukkit.getConsoleSender().sendMessage("&l[&bPlot&aGen&r&l]&r This block is still not air! Generating new coordinates... " + m);
 				
 			}	
 			
@@ -185,11 +236,11 @@ public class PlotGen implements CommandExecutor{
 				e.printStackTrace();
 			}
 			
-			Bukkit.getConsoleSender().sendMessage("This block is air! Generating a plot of land...");
+			Bukkit.getConsoleSender().sendMessage("&l[&bPlot&aGen&r&l]&r This block is air! Generating a plot of land...");
 			placing();
 			
 		}else {
-			Bukkit.getConsoleSender().sendMessage("This block is air! Generating a plot of land...");
+			Bukkit.getConsoleSender().sendMessage("&l[&bPlot&aGen&r&l]&r This block is air! Generating a plot of land...");
 			placing();
 			
 			try {
@@ -227,7 +278,6 @@ public class PlotGen implements CommandExecutor{
 		Location loc = new Location(world,x,height,z);
 		Location firstLoc = new Location(world,x,height,z);
 		Block b = loc.getBlock();
-		BlockState state = b.getState();
 		
 		b.setType(Material.GRASS_BLOCK);
 
