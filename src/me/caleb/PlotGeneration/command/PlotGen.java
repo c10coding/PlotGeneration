@@ -297,12 +297,12 @@ public class PlotGen implements CommandExecutor,Listener{
 				e.printStackTrace();
 			}
 			
-			Bukkit.getConsoleSender().sendMessage("&l[&bPlot&aGen&r&l]&r This block is air! Generating a plot of land...");
+			Bukkit.getConsoleSender().sendMessage(Chat.chat("&l[&bPlot&aGen&r&l]&r This block is air! Generating a plot of land..."));
 			placing();
 			
 		}else {
 			
-			Bukkit.getConsoleSender().sendMessage("&l[&bPlot&aGen&r&l]&r This block is air! Generating a plot of land...");
+			Bukkit.getConsoleSender().sendMessage(Chat.chat("&l[&bPlot&aGen&r&l]&r This block is air! Generating a plot of land..."));
 			placing();
 			
 			try {
@@ -473,7 +473,8 @@ public class PlotGen implements CommandExecutor,Listener{
 			stmt.setString(1, temp.getName());
 			
 			stmt.execute();
-			Bukkit.getConsoleSender().sendMessage("[PlotGen] - Deleting the plot");
+			Bukkit.getConsoleSender().sendMessage(Chat.chat("&l[&bPlot&aGen&r&l]&r Deleting the plot..."));
+			
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
