@@ -3,6 +3,7 @@ package me.caleb.PlotGeneration.command;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Random;
 
 import org.bukkit.Bukkit;
@@ -10,6 +11,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.banner.Pattern;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -19,10 +21,15 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.plugin.Plugin;
 
+import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.MaxChangedBlocksException;
+import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
-import com.sk89q.worldedit.internal.annotation.Selection;
 import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.CuboidRegion;
+import com.sk89q.worldedit.world.block.BlockType;
+import com.sk89q.worldedit.world.block.BlockTypes;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
@@ -30,6 +37,7 @@ import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.protection.flags.Flags;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.managers.RegionManager;
+import com.sk89q.worldguard.protection.managers.RemovalStrategy;
 import com.sk89q.worldguard.protection.regions.ProtectedCuboidRegion;
 import com.sk89q.worldguard.protection.regions.RegionContainer;
 
@@ -48,6 +56,10 @@ public class PlotGen implements CommandExecutor,Listener{
 	public String world,plotName,owner,x,z;
 
 	public boolean confirm,isCalled;
+	
+	ProtectedCuboidRegion region;
+	
+	Plot p;
 	
 	Player senderP;
 	
@@ -312,7 +324,7 @@ public class PlotGen implements CommandExecutor,Listener{
 	
 	private void placing() {
 		
-		Plot p = getPlot();
+		p = getPlot();
 		int x = Integer.parseInt(p.x);
 		int z = Integer.parseInt(p.z);
 		String plotName = p.plotName;
@@ -378,13 +390,13 @@ public class PlotGen implements CommandExecutor,Listener{
 	
 	public void makeRegion(BlockVector3 bv, BlockVector3 bv2, Player p, World world) {
 		
-		ProtectedCuboidRegion region = new ProtectedCuboidRegion("Plot_" + p.getName(),bv,bv2);
+		region = new ProtectedCuboidRegion("Plot_" + p.getName(),bv,bv2);
 		//p.sendMessage("A new region has been made for you!");
 		region.setPriority(10);
 		
 		DefaultDomain members = region.getMembers();
 		
-		LocalPlayer lp = w.wrapPlayer(p);
+		LocalPlayer lp = wg.wrapPlayer(p);
 		members.addPlayer(lp);
 		
 		region.setOwners(members);
@@ -400,7 +412,7 @@ public class PlotGen implements CommandExecutor,Listener{
 
 	}
 	
-	public void deletePlot() {
+	public void deletePlot(){
 		
 		Player temp = senderP;
 		temp.sendMessage(Chat.chat("&l[&bPlot&aGen&r&l]&r Deleting plot..."));
@@ -416,45 +428,45 @@ public class PlotGen implements CommandExecutor,Listener{
 			ResultSet rs = stmt.executeQuery();	
 			
 			while(rs.next()) {
-				int	x = Integer.parseInt(rs.getString(2));
+				
+				int	x = Integer.parseInt(rs.getString(2)) + 1;
 				int	y = plugin.getConfig().getInt("Level");
-				int	z = Integer.parseInt(rs.getString(3));
-				
-				x++;
-				
+				int	z = Integer.parseInt(rs.getString(3)) + 1;
 				World world = plugin.getServer().getWorld(plugin.getConfig().getString("genWorld"));
 				Location startLoc = new Location(world,x,y,z);
-				Block b = startLoc.getBlock();
 				
-				//temp.sendMessage(Chat.chat("&l[&bPlot&aGen&r&l]&r Teleporting you back to spawn..."));
-				//temp.performCommand("spawn");
 				
-				//*************************************************
-				//** REPLACE THE CODE BELOW. IT CRASHES THE SERVER **
-				//*************************************************
-				/*
-		
-				y--;
-				for(int o = 0;o<=265;o++) {
-					y++;
-					for(int i = 0;i<=19;i++) {
-						x = Integer.parseInt(rs.getString(2));
-						z++;
-						for(int r = 0;r<=20;r++) {
-							startLoc = new Location(world,x,y,z);
-							b = startLoc.getBlock();
+				int maxX = startLoc.getBlockX() + 19;
+				int maxY = startLoc.getBlockY() + 19;
+				int maxZ = startLoc.getBlockZ() + 19;
+				
+				Location max = new Location(world,maxX,maxY,maxZ);
+				
+				temp.sendMessage(Chat.chat("&l[&bPlot&aGen&r&l]&r Teleporting you back to spawn..."));
+				temp.performCommand("spawn");
+				
+				for(int a = x; a<=maxX; a++) {
+					for(int bb = y; bb<=maxY; bb++) {
+						for(int c = z; c<=maxZ;c++) {
+							Block b = startLoc.getWorld().getBlockAt(new Location(startLoc.getWorld(),a,bb,c));
 							b.setType(Material.AIR);
-							x++;
 						}
 					}
-				}*/
-				//This is a start
-			//Selection sel = getWorldEdit().getSession(temp).getSelection(world)
+				}
+				
 			}
+			
 			
 		}catch (SQLException e){
 			e.printStackTrace();
 		}
+		
+		//Removes the region
+		World world = plugin.getServer().getWorld(plugin.getConfig().getString("genWorld"));
+		RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+		RegionManager regions = container.get(BukkitAdapter.adapt(world));
+		regions.removeRegion("Plot_" + temp.getName(), RemovalStrategy.UNSET_PARENT_IN_CHILDREN);
+		
 		//Removes the plot from the database
 		try {
 			stmt = plugin.getConnection().prepareStatement("DELETE FROM `IslandInfo` WHERE owner=?");
