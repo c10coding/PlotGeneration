@@ -21,6 +21,7 @@ import org.bukkit.plugin.Plugin;
 
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
+import com.sk89q.worldedit.internal.annotation.Selection;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
@@ -40,7 +41,9 @@ public class PlotGen implements CommandExecutor,Listener{
 
 	private Main plugin;
 	
-	public WorldGuardPlugin w = getWorldGuard();
+	public WorldGuardPlugin wg = getWorldGuard();
+	
+	public WorldEditPlugin we = getWorldEdit();
 	
 	public String world,plotName,owner,x,z;
 
@@ -92,14 +95,34 @@ public class PlotGen implements CommandExecutor,Listener{
 				teleportHome(sender);
 			}else if(args[0].equalsIgnoreCase("delete")) {
 				
-				//MAKE IT CHECK TO SEE IF YOU EVEN HAVE A PLOT TO BEGIN WITH
-				Player p = Bukkit.getPlayer(sender.getName());
-				String pName = sender.getName();
-				
-				p.sendMessage(PlotGen.chat("Confirm that you want to delete your plot by typing Yes or Y. Otherwise, type No or N"));
-				
-				isCalled = true;
-				senderP = Bukkit.getPlayer(sender.getName());
+				try {
+					PreparedStatement stmt = plugin.getConnection().prepareStatement("SELECT * FROM `IslandInfo` WHERE owner=?");
+					stmt.setString(1,owner);
+					
+					ResultSet rs = stmt.executeQuery();
+					
+					if(!(rs.next())) {
+						
+						sender.sendMessage(Chat.chat("&l[&bPlot&aGen&r&l]&r You do not have a plot to delete!"));
+						return false;
+						
+					}else {
+						
+						Player p = Bukkit.getPlayer(sender.getName());
+						String pName = sender.getName();
+						
+						p.sendMessage(PlotGen.chat("Confirm that you want to delete your plot by typing Yes or Y. Otherwise, type No or N"));
+						
+						isCalled = true;
+						senderP = Bukkit.getPlayer(sender.getName());
+						return true;
+						
+					}
+					
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+	
 			}
 		}
 		
@@ -382,8 +405,57 @@ public class PlotGen implements CommandExecutor,Listener{
 		Player temp = senderP;
 		temp.sendMessage(Chat.chat("&l[&bPlot&aGen&r&l]&r Deleting plot..."));
 		
-		//Removes the plot from the database
+		//Destroys the physical plot
 		PreparedStatement stmt;
+		
+		try {
+			
+			stmt = plugin.getConnection().prepareStatement("SELECT * FROM `IslandInfo` WHERE owner=?");
+			stmt.setString(1, temp.getName());
+			
+			ResultSet rs = stmt.executeQuery();	
+			
+			while(rs.next()) {
+				int	x = Integer.parseInt(rs.getString(2));
+				int	y = plugin.getConfig().getInt("Level");
+				int	z = Integer.parseInt(rs.getString(3));
+				
+				x++;
+				
+				World world = plugin.getServer().getWorld(plugin.getConfig().getString("genWorld"));
+				Location startLoc = new Location(world,x,y,z);
+				Block b = startLoc.getBlock();
+				
+				//temp.sendMessage(Chat.chat("&l[&bPlot&aGen&r&l]&r Teleporting you back to spawn..."));
+				//temp.performCommand("spawn");
+				
+				//*************************************************
+				//** REPLACE THE CODE BELOW. IT CRASHES THE SERVER **
+				//*************************************************
+				/*
+		
+				y--;
+				for(int o = 0;o<=265;o++) {
+					y++;
+					for(int i = 0;i<=19;i++) {
+						x = Integer.parseInt(rs.getString(2));
+						z++;
+						for(int r = 0;r<=20;r++) {
+							startLoc = new Location(world,x,y,z);
+							b = startLoc.getBlock();
+							b.setType(Material.AIR);
+							x++;
+						}
+					}
+				}*/
+				//This is a start
+			//Selection sel = getWorldEdit().getSession(temp).getSelection(world)
+			}
+			
+		}catch (SQLException e){
+			e.printStackTrace();
+		}
+		//Removes the plot from the database
 		try {
 			stmt = plugin.getConnection().prepareStatement("DELETE FROM `IslandInfo` WHERE owner=?");
 			stmt.setString(1, temp.getName());
@@ -394,6 +466,7 @@ public class PlotGen implements CommandExecutor,Listener{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
 		
 		
 	}
