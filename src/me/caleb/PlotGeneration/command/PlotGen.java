@@ -155,9 +155,13 @@ public class PlotGen implements CommandExecutor,Listener{
 				e.setCancelled(true);
 				
 			}else if (e.getMessage().equalsIgnoreCase("N") || e.getMessage().equalsIgnoreCase("No")){
+				Player p = e.getPlayer();
+				p.sendMessage(chat("Player did not confirm. Aborting..."));
 				confirm = false;
 				e.setCancelled(true);
 			}else {
+				Player p = e.getPlayer();
+				p.sendMessage(chat("Player did not confirm. Aborting..."));
 				confirm = false;
 			}
 		}
