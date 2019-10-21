@@ -4,5 +4,6 @@ main: me.caleb.PlotGeneration.Main
 author: Caleb Owens
 commands:
   plotgen:
-    description: Plotgen command
+    description: Generates a plot
 api-version: 1.13
+depend: [WorldEdit, WorldGuard]

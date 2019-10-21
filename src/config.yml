@@ -13,3 +13,11 @@ Port: 3306
 Database: "serverpro_db"
 Username: "root"
 Password: "Krni7YlzOK843lx"
+
+#Help
+Help:
+- Do &6/plotgen create &ato make a new plot
+
+- Do &6/plotgen delete &ato delete your plot if you have an existing one
+
+- Do &6/plotgen home &ato take you back to your plot
