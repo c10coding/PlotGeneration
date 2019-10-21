@@ -12,6 +12,7 @@ Host: "51.81.5.51"
 Port: 3306
 Database: "serverpro_db"
 Username: "root"
+<<<<<<< HEAD
 Password: "Krni7YlzOK843lx"
 
 #Help
@@ -21,3 +22,6 @@ Help:
 - Do &6/plotgen delete &ato delete your plot if you have an existing one
 
 - Do &6/plotgen home &ato take you back to your plot
+=======
+Password: "Krni7YlzOK843lx"
+>>>>>>> 292b99731bc4f11f3078a00ae3f3bb0eb77e7565

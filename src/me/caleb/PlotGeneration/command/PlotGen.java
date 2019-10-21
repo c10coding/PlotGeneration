@@ -3,7 +3,11 @@ package me.caleb.PlotGeneration.command;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+<<<<<<< HEAD
 import java.util.List;
+=======
+import java.util.Map;
+>>>>>>> 292b99731bc4f11f3078a00ae3f3bb0eb77e7565
 import java.util.Random;
 
 import org.bukkit.Bukkit;
@@ -11,6 +15,10 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+<<<<<<< HEAD
+=======
+import org.bukkit.block.banner.Pattern;
+>>>>>>> 292b99731bc4f11f3078a00ae3f3bb0eb77e7565
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -20,9 +28,21 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChatEvent;
 import org.bukkit.plugin.Plugin;
 
+<<<<<<< HEAD
 import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldedit.math.BlockVector3;
+=======
+import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.MaxChangedBlocksException;
+import com.sk89q.worldedit.WorldEdit;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldedit.bukkit.WorldEditPlugin;
+import com.sk89q.worldedit.math.BlockVector3;
+import com.sk89q.worldedit.regions.CuboidRegion;
+import com.sk89q.worldedit.world.block.BlockType;
+import com.sk89q.worldedit.world.block.BlockTypes;
+>>>>>>> 292b99731bc4f11f3078a00ae3f3bb0eb77e7565
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
@@ -128,12 +148,15 @@ public class PlotGen implements CommandExecutor,Listener{
 					e.printStackTrace();
 				}
 	
+<<<<<<< HEAD
 			}else if(args[0].equalsIgnoreCase("help")) {
 				List<String> list = plugin.getConfig().getStringList("Help");
 				sender.sendMessage(chat("List of commands: "));
 				for(String e : list) {
 					sender.sendMessage(Chat.chat("&a " + e));
 				}
+=======
+>>>>>>> 292b99731bc4f11f3078a00ae3f3bb0eb77e7565
 			}
 		}
 		
