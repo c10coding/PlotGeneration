@@ -12,7 +12,6 @@ Host: "51.81.5.51"
 Port: 3306
 Database: "serverpro_db"
 Username: "root"
-<<<<<<< HEAD
 Password: "Krni7YlzOK843lx"
 
 #Help

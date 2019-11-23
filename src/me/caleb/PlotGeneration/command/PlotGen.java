@@ -98,7 +98,7 @@ public class PlotGen implements CommandExecutor,Listener{
 				}
 			}else if(args[0].equalsIgnoreCase("home")) {
 				teleportHome(sender);
-			}else if(args[0].equalsIgnoreCase("delete")) {
+			}else if(args[0].equalsIgnoreCase("delete") && args.length == 1) {
 				
 				try {
 					PreparedStatement stmt = plugin.getConnection().prepareStatement("SELECT * FROM `IslandInfo` WHERE owner=?");
@@ -133,6 +133,10 @@ public class PlotGen implements CommandExecutor,Listener{
 				sender.sendMessage(chat("List of commands: "));
 				for(String e : list) {
 					sender.sendMessage(Chat.chat("&a " + e));
+				}
+			}else if (args[0].equalsIgnoreCase("delete") && args.length == 2) {
+				if(sender.hasPermission("plotgen.delete.other")) {
+					
 				}
 			}
 		}

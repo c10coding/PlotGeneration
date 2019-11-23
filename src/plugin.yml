@@ -5,5 +5,11 @@ author: Caleb Owens
 commands:
   plotgen:
     description: Generates a plot
+    permission: plotgen.use
+    aliases: [pg, plotg, pgen, plotgeneration]
 api-version: 1.13
 depend: [WorldEdit, WorldGuard]
+permissions:
+  plotgen.*:
+    description: Gives all plotgen commands
+    
