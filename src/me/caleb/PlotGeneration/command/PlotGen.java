@@ -3,6 +3,7 @@ package me.caleb.PlotGeneration.command;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -96,6 +97,7 @@ public class PlotGen implements CommandExecutor,Listener{
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}
+				
 			}else if(args[0].equalsIgnoreCase("home")) {
 				teleportHome(sender);
 			}else if(args[0].equalsIgnoreCase("delete") && args.length == 1) {
@@ -116,7 +118,7 @@ public class PlotGen implements CommandExecutor,Listener{
 						Player p = Bukkit.getPlayer(sender.getName());
 						String pName = sender.getName();
 						
-						p.sendMessage(PlotGen.chat("Confirm that you want to delete your plot by typing Yes or Y. Otherwise, type No or N"));
+						p.sendMessage(chat("Confirm that you want to delete your plot by typing Yes or Y. Otherwise, type No or N"));
 						
 						isCalled = true;
 						senderP = Bukkit.getPlayer(sender.getName());
@@ -137,7 +139,33 @@ public class PlotGen implements CommandExecutor,Listener{
 			}else if (args[0].equalsIgnoreCase("delete") && args.length == 2) {
 				if(sender.hasPermission("plotgen.delete.other")) {
 					
+					String targetPlayer = args[1];
+					senderP = (Player) sender;
+					PreparedStatement stmt;
+					
+					try {
+						
+						stmt = plugin.getConnection().prepareStatement("SELECT * FROM `IslandInfo` WHERE owner=?");
+						stmt.setString(1, targetPlayer);
+						
+						ResultSet rs = stmt.executeQuery();
+						
+						if(!rs.isBeforeFirst()) {
+							
+							sender.sendMessage("This user either does not have a plot, or you typed in the wrong name!");
+							
+						}else {
+							adminDeletePlot();
+						}
+						
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
+			}else if(args[0].equalsIgnoreCase("deleteAll")) {
+				senderP = (Player) sender;
+				deleteAllPlots();
 			}
 		}
 		
@@ -172,6 +200,7 @@ public class PlotGen implements CommandExecutor,Listener{
 	}
 	
 	public void teleportHome(CommandSender sender) {
+		
 		Player p = Bukkit.getPlayer(sender.getName());
 		String pName = sender.getName();
 		
@@ -250,7 +279,7 @@ public class PlotGen implements CommandExecutor,Listener{
 		return thisPlot;
 	}
 	
-	public void plotGeneration() {
+	private void plotGeneration() {
 		
 		int height = plugin.getConfig().getInt("Level");
 		int newX = Integer.parseInt(x);
@@ -329,6 +358,58 @@ public class PlotGen implements CommandExecutor,Listener{
 		}
 	}
 	
+	private void adminDeletePlot(){
+		
+		chat("Deleting this users plot...");
+		
+		deletePlot();
+		
+	}
+	
+	private void deleteAllPlots() {
+		
+		ArrayList<String> listOfOwners = new ArrayList();
+	
+		try {
+			
+			PreparedStatement stmt = plugin.getConnection().prepareStatement("SELECT * FROM `IslandInfo`");
+			ResultSet rs = stmt.executeQuery();
+			
+			while(rs.next()) {
+				String owner = rs.getString("owner");
+				listOfOwners.add(owner);
+			}
+			
+			for(int i = 0;i < listOfOwners.size();i++) {
+				
+				String currentOwner = listOfOwners.get(i);
+				stmt = plugin.getConnection().prepareStatement("SELECT * FROM `IslandInfo` WHERE owner=?");
+				stmt.setString(1, currentOwner);
+				rs = stmt.executeQuery();
+				
+				int	x = Integer.parseInt(rs.getString(2)) + 1;
+				int	y = plugin.getConfig().getInt("Level");
+				int	z = Integer.parseInt(rs.getString(3)) + 1;
+				World world = plugin.getServer().getWorld(plugin.getConfig().getString("genWorld"));
+				Location startLoc = new Location(world,x,y,z);
+				
+				
+				int maxX = startLoc.getBlockX() + 19;
+				int maxY = startLoc.getBlockY() + 19;
+				int maxZ = startLoc.getBlockZ() + 19;
+				
+				senderP.sendMessage(listOfOwners.get(i));
+			}
+			
+			
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
 	private void placing() {
 		
 		p = getPlot();
@@ -356,18 +437,23 @@ public class PlotGen implements CommandExecutor,Listener{
 		
 		int tempX = x + 4;
 		int tempZ = z + 4;
-		int tempHeight = height + 1;
+		int tempHeight = height + 5;
 		Location teleportLocation = new Location(world,tempX,tempHeight,tempZ);
 		
-		for(int i = 0;i<=19;i++) {
-			x = Integer.parseInt(p.x);
-			z++;
-			for(int a = 0; a<=19;a++) {
-				x++;
-				loc = new Location(world,x,height,z);
-				b = loc.getBlock();
-				b.setType(Material.GRASS_BLOCK);
+		for(int h = 0;h < 4;h++) {	
+			for(int i = 0;i<=size;i++) {
+				x = Integer.parseInt(p.x);
+				z++;
+				for(int a = 0; a<=size;a++) {
+					x++;
+					loc = new Location(world,x,height,z);
+					b = loc.getBlock();
+					b.setType(Material.GRASS_BLOCK);
+				}
 			}
+			height++;
+			x = Integer.parseInt(p.x);
+			z = Integer.parseInt(p.z);
 		}
 		
 		Block b2 = firstLoc.getBlock();
@@ -395,7 +481,7 @@ public class PlotGen implements CommandExecutor,Listener{
 		
 	}
 	
-	public void makeRegion(BlockVector3 bv, BlockVector3 bv2, Player p, World world) {
+	private void makeRegion(BlockVector3 bv, BlockVector3 bv2, Player p, World world) {
 		
 		region = new ProtectedCuboidRegion("Plot_" + p.getName(),bv,bv2);
 		//p.sendMessage("A new region has been made for you!");
@@ -418,8 +504,9 @@ public class PlotGen implements CommandExecutor,Listener{
 		//region.setFlag(Flags.GREET_MESSAGE, "Welcome to your new plot!");
 
 	}
+
 	
-	public void deletePlot(){
+	private void deletePlot(){
 		
 		Player temp = senderP;
 		temp.sendMessage(Chat.chat("&l[&bPlot&aGen&r&l]&r Deleting plot..."));
@@ -443,9 +530,9 @@ public class PlotGen implements CommandExecutor,Listener{
 				Location startLoc = new Location(world,x,y,z);
 				
 				
-				int maxX = startLoc.getBlockX() + 19;
-				int maxY = startLoc.getBlockY() + 19;
-				int maxZ = startLoc.getBlockZ() + 19;
+				int maxX = startLoc.getBlockX() + plugin.getConfig().getInt("Size");
+				int maxY = startLoc.getBlockY() + plugin.getConfig().getInt("Size");
+				int maxZ = startLoc.getBlockZ() + plugin.getConfig().getInt("Size");
 				
 				Location max = new Location(world,maxX,maxY,maxZ);
 				
